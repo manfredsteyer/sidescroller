@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8"/>
+    <title>Canvas tutorial</title>
+    <script type="text/javascript">
+        
+        var screenCtx;
+        var ctx;
+
+
+        function getRandomColor() {
+            var letters = '0123456789ABCDEF';
+            var color = '#';
+            for (var i = 0; i < 6; i++) {
+                color += letters[Math.floor(Math.random() * 16)];
+            }
+            return color;
+        }
+
+
+        const DEBUG = false;
+
+        var buffer;
+      function init() {
+        
+        
+        if (DEBUG) {
+            buffer = document.getElementById('buffer');
+        }
+        else {
+            buffer = document.createElement('canvas');
+            buffer.width = 800;
+            buffer.height = 480;
+        }
+        ctx = buffer.getContext('2d');
+
+        var canvasScreen = document.getElementById('screen');
+        screenCtx = canvasScreen.getContext('2d');
+
+        ctx.fillStyle = 'black';
+        ctx.fillRect(0,0,800,480);
+
+        for (var i=0; i<300; i++) {
+            ctx.fillStyle = Math.random() < 0.5 ? 'white' : 'silver';
+            var x = Math.random() * 800;
+            var y = Math.random() * 480;
+            ctx.fillRect(x,y,1,1);
+        }
+
+
+
+        window.requestAnimationFrame(tick)
+      }
+
+      var lastTick = null;
+      var start = null;
+      var delta = 0;
+      var offsetX = 0;
+      var worldOffsetX = 0;
+
+      var bigStars = {};
+      var nextBigStar = 200;
+
+      function ensureBuffer() {
+          
+          if (offsetX + 640 > 650) {
+              var corr = offsetX + 640 - 650;
+              worldOffsetX -= corr;
+              
+
+              ctx.drawImage(buffer, 650-640+(corr), 0, 640, 480, 0, 0, 640, 480)
+              ctx.fillStyle = 'black'; //getRandomColor();
+              ctx.fillRect(640-corr,0,650,480);
+              ctx.fillStyle = Math.random() < 0.5 ? 'white' : 'silver';
+              for (var i=0; i<40; i++) {
+                 var x = (Math.random() * (800 - 640)) + 640;
+                 var y = Math.random() * 480;
+                 ctx.fillStyle = 'white';
+                 ctx.fillRect(x,y,1,1);
+              }              
+              
+              if ( worldOffsetX >= nextBigStar ) {
+                console.debug('corr, worldOffsetX, nextBigStar', corr, worldOffsetX, nextBigStar);
+                ctx.fillStyle = 'white';
+                ctx.strokeStyle = 'white'
+                var yStar = Math.random()*480;
+                ctx.beginPath();
+                ctx.arc(645 - corr, yStar, 4, 0, Math.PI * 2);
+                ctx.stroke();
+                ctx.beginPath();
+                ctx.arc(645 - corr, yStar, 2, 0, Math.PI * 2);
+                ctx.fill();
+
+                nextBigStar += 200;
+              }
+
+              offsetX = 0;
+          }
+      }
+
+      function tick(timer) {
+        
+        if (!lastTick) {
+            start = lastTick = timer;
+            window.requestAnimationFrame(tick);
+            return;
+        }
+
+        delta += timer - lastTick;
+        lastTick = timer;
+
+        var velocity = 16;
+
+        var offsetDelta = parseInt(delta / velocity) * 2;
+        
+        var offset = delta % velocity;
+        if (offsetDelta > 0) {
+            delta = 0;
+            offsetX += offsetDelta;
+            worldOffsetX += offsetDelta;
+            ensureBuffer();
+            screenCtx.drawImage(buffer, offsetX, 0, 640, 480, 0, 0, 640, 480);
+        }
+
+        var progress = timer - start;
+        if (timer < 100000) {
+            window.requestAnimationFrame(tick); 
+        }
+
+      }
+
+    </script>
+    <style type="text/css">
+      canvas { border: solid black 1px}
+    
+    </style>
+  </head>
+  <body onload="init();">
+
+    <canvas id="screen" width="640" height="480"></canvas>
+
+    <canvas id="buffer" width="800" height="480"></canvas>
+  </body>
+</html>
